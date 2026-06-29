@@ -1,0 +1,9 @@
+# Keep shell scripts / python LF so shebangs work on macOS/Linux clones.
+* text=auto eol=lf
+*.py text eol=lf
+svc  text eol=lf
+*.md text eol=lf
+
+# Windows-native wrappers stay CRLF.
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

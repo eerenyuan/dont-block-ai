@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Thin wrapper so any POSIX/git-bash shell can call `svc ...` instead of the
+# full `python /path/to/svc.py ...`. Put this dir on PATH, or call by path.
+here="$(cd "$(dirname "$0")" && pwd)"
+exec python "$here/svc.py" "$@"
