@@ -84,19 +84,11 @@ python svc.py stop web               # 关掉它，连同整棵子进程树
 svc stop --all --project /path/to/this/project   # 只停这个项目的服务
 ```
 
-## 踩过的坑（已固化进代码）
+## 为什么靠谱
 
-这些是本工具已经替你处理好的陷阱，省得你重新踩一遍：
-
-- **Windows：千万别用 `DETACHED_PROCESS`（0x8）。** 它会悄悄破坏 stdout/stderr 句柄继承，导致日志文件全空。
-  正确组合是 `CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`。
-- **永远杀整棵进程树。** `npm run dev` 实为 `shell → node`；只杀父进程会留下孤儿 `node` 继续占端口。
-  本工具用 `psutil`（≈ `taskkill /T /F`）。
-- **内联引号很脆弱**——经过 agent → Python → shell 多层传递容易出错。复杂逻辑写进脚本文件，或用 `--shell none` 原样传 argv。
-- **每次运行轮转日志。** 否则复用同名服务会把不相干的多次运行混进一个文件（并翻出过期的旧报错）。
-  每次启动都从干净日志开始，上一次保留为 `<名>.log.prev`。
-- **别把服务的生命周期绑在启动器上。** 本工具无常驻 daemon、启动器用完即退，所以刻意**不用** `prctl(PR_SET_PDEATHSIG)`——
-  那会让服务在启动器一返回的瞬间就被杀掉。
+后台进程那些常见的坑，本工具已经替你处理好了：**Windows 上日志也不会丢**、**关闭时连整棵子进程树一起清掉**
+（不留占着端口的孤儿 `node`）、**每次运行用全新日志**所以复用同名也不串台。具体机制、以及每个选择背后的坑，
+都写在 [DESIGN.md](DESIGN.md) 里（代码注释里也有）。
 
 ## 命令
 

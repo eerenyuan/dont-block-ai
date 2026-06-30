@@ -114,20 +114,23 @@ svc restart <名字>   # 用存好的配置重启；同样等到 status=ready
 3. 若 `status=timeout` / `exited-early`：`svc logs <名字> -n 60` 看报错。
 4. 不需要了：`svc stop <名字>`（常驻服务通常保留，交给用户决定）。
 
-## 重要经验（来自实测，避免重踩坑）
+## 操作经验（会影响你怎么用）
 
-- **Windows 上千万别加 `DETACHED_PROCESS`(0x8) 创建标志**：它会悄悄破坏 stdout/stderr 句柄继承，导致日志**全空**。正确组合是 `CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`（已在 svc.py 处理）。
+只列会改变用法的几条；进程树清除、日志轮转、Windows 句柄继承等**已自动处理好、你不用管**，
+其内部机制和踩坑原因见仓库的 `DESIGN.md`。
+
 - **命令里的复杂引号很脆弱**：经 bash→python→shell 多层传递，内联 `node -e "..."` 这种容易被吃掉引号而启动失败。**把复杂逻辑写进脚本文件再运行**，或用 `--shell none` 直接传 argv。
-- **关闭一定杀进程树**，否则 node/python 子进程变孤儿继续占端口。
-- 服务 stdout 默认可能有缓冲；Python 服务加 `-u` 或 `--env PYTHONUNBUFFERED=1`，否则日志延迟。
+- **Python 服务加 `-u`**（或 `--env PYTHONUNBUFFERED=1`），否则 stdout 有缓冲、`logs` 看不到实时输出。
 - **普通程序 vs 自我 daemon 化的服务**：svc 适合“前台常驻、需要被后台化”的进程；对会自己 fork 成后台的（`mysqld -d`、`pm2 start`）要用它们的**前台模式**，否则 svc 记录的 pid 会失效。OS 级服务（systemd/Windows 服务/docker）用各自原生管理器。详见 `RECIPES.md`。
+- **收尾用 `stop --all --project <目录>` 限定范围**，别裸 `stop --all`（全局，会误伤别的项目）。
 
 ## 配套文件
 
 - `svc.py` —— 核心管理器（唯一必需）。命令：`start/restart/list/status/logs/grep/stop/clean`
 - `svc` / `svc.cmd` / `svc.ps1` —— bash / cmd / PowerShell 薄包装器
 - `RECIPES.md` —— Node/Python/Java/Go/.NET/docker 各语言启动配方 + 程序类型辨析
-- `README.md` —— 与 agent/平台无关的通用说明（给 opencode 等非 Claude 环境）
+- `README.md` / `README.zh-CN.md` —— 面向使用者的总览（英 / 中）
+- `DESIGN.md` —— 实现原理与踩坑详解（给改代码的人，非使用者）
 
 ## 现有方案与借鉴
 

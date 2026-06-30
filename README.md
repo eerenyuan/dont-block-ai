@@ -91,23 +91,12 @@ When an agent cleans up, it should scope to its project:
 svc stop --all --project /path/to/this/project   # only this project's services
 ```
 
-## Hard-won lessons (baked into the code)
+## Why it's robust
 
-These are the traps this tool already handles so you don't have to rediscover them:
-
-- **Windows: do NOT use `DETACHED_PROCESS` (0x8).** It silently breaks stdout/stderr handle
-  inheritance and your log file stays empty. The right combo is
-  `CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`.
-- **Always kill the whole process tree.** `npm run dev` is really `shell → node`; killing only
-  the parent leaves an orphaned `node` holding the port. Uses `psutil` (≈ `taskkill /T /F`).
-- **Inline quotes are fragile** across the agent → Python → shell layers. Put complex logic in a
-  script file, or use `--shell none` to pass argv verbatim.
-- **Rotate logs per run.** Reusing a service name would otherwise mix unrelated runs in one file
-  (and surface stale errors). Each launch starts a fresh log; the previous run is kept as
-  `<name>.log.prev`.
-- **Don't tie the service's lifetime to the launcher.** This tool is daemon-less and the launcher
-  exits immediately, so it deliberately avoids `prctl(PR_SET_PDEATHSIG)` — which would kill the
-  service the moment the launcher returns.
+The footguns of background processes are already handled for you: **logs are captured even on
+Windows**, **shutdown kills the whole process tree** (no orphaned `node` holding the port), and
+**each run gets a fresh log** so reused names never mix. The exact mechanisms and the traps behind
+each choice are written up in [DESIGN.md](DESIGN.md) (and in the code comments).
 
 ## Commands
 
