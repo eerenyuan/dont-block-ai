@@ -1,5 +1,7 @@
 # don't-block-ai
 
+**English** | [简体中文](README.zh-CN.md)
+
 **Start a long-running service without blocking your AI agent.**
 
 A tiny, zero-build, cross-platform background-service manager for AI coding agents
